@@ -1,0 +1,53 @@
+<div class="row">
+	<h2>Users <button type="button" onclick="addUser()" class="btn btn-success pull-right">Add user</button></h2>
+</div>
+<div class="row">
+<% var i=0;for(var key in users){i++; %>
+<div class="col-md-3">
+	<div class="panel panel-default">
+	  <div class="panel-body">
+	    <h4 class="">
+	    	<%= users[key].username %>
+	    	<a href="#" onclick="deleteUser(<%= users[key].id %>)" class="btn btn-default pull-right"><span class="glyphicon glyphicon-trash"></span></a>
+	    	<a href="/edit/<%= users[key].id %>" class="btn btn-default pull-right">Edit</a>
+	    	
+	    </h4>    
+	  </div>
+	</div>
+</div>
+<% } %>
+</div>
+<% if(i==0){ %>
+<div class="panel panel-default">
+  <div class="panel-body">
+    No users found
+  </div>
+</div>
+
+<% } %>
+<form class="addForm" method="get" action="/adduser">
+	<input type="hidden" name="username" id="username"/>
+</form>
+<script>
+
+function addUser(){
+	var person = prompt("Please enter username");
+	if (person != null) {
+		if($.trim(person)!=""){
+			$("#username").val($.trim(person));
+	   		$(".addForm").submit();
+		}else{
+			alert("Username cannot be blank.")
+		}
+	   
+	}
+}
+
+
+function deleteUser(id){
+	if(confirm("Do you want to delete this user?")){
+		window.location.href = location.origin+"/deleteuser/"+id;
+	}
+}
+
+</script>

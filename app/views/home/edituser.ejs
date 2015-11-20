@@ -1,0 +1,263 @@
+<script>
+angular.module('investDB', [])
+  .controller('EditClassController', function() {
+    var classList = this;
+    var tempDiv = document.createElement("div");
+    tempDiv.innerHTML = "<%= JSON.stringify(classes) %>";
+    var tmpClasses = JSON.parse(tempDiv.innerHTML);
+    for(var i =0;i<tmpClasses.data.length;i++){
+    	for(key in tmpClasses.data[i].classData){
+    		if(typeof tmpClasses.data[i].classData[key]=="object"){
+    			tmpClasses.data[i].classData[key] = JSON.stringify(tmpClasses.data[i].classData[key]);
+    		}
+    	}
+    }
+    console.log(tmpClasses);
+    classList.classes = tmpClasses;
+    classList.tempClassView = {name:"Nothing selected",classData:{}};
+    classList.addClass = function(){
+    	var person = prompt("Please enter classname");
+		if (person != null) {
+			if($.trim(person)!=""){
+				var classFound = 0;
+				for(var i=0;i<classList.classes.data.length;i++){
+					if(convertToSlug(classList.classes.data[i].name)==convertToSlug($.trim(person))){
+						classFound = 1;
+					}
+				}
+				if(classFound==0){
+					var tempClass = {};
+					tempClass.name = convertToSlug($.trim(person));
+					tempClass.classData = {};
+
+					classList.tempClassView = tempClass;
+
+					classList.classes.data.push(tempClass);
+				}else{
+					alert("Classname already exists.");
+				}
+				
+			}else{
+				alert("Classname cannot be blank.")
+			}
+		   
+		}
+    };
+
+    classList.selectClass = function(me){
+    	 var fieldsEmpty = 0;
+    	 var keyTemp = "";
+    	 for (var k in classList.tempClassView.classData){
+    	 	if($.trim(classList.tempClassView.classData[k])==""){
+    	 		fieldsEmpty = 1;
+    	 		keyTemp = k;
+    	 	}
+    	 }
+    	 if(fieldsEmpty){
+    	 	alert("Please fill in "+keyTemp+", it cannot be left empty.");
+    	 	return 0;
+    	 }else{
+    	 	classList.tempClassView = classList.classes.data[me.$index];
+    	 }
+    }
+
+    classList.addFields = function(){
+    	var person = prompt("Please enter fieldName");
+		if (person != null) {
+			if($.trim(person)!=""){
+				var tempField = {};
+				var fieldFound = 0;
+				for(var key in classList.tempClassView.classData){
+					if(key==person){
+						fieldFound = 1;
+					}
+				}
+				if(fieldFound){
+					alert("Fieldname already exists.");
+					return 0;
+				}else{
+					classList.tempClassView.classData[$.trim(person)] = "";
+					//populateFieldRecur(fieldName);
+				}
+			}else{
+				alert("Fieldname cannot be empty.");
+				return 0;
+			}
+		}
+    }
+
+    classList.loadJSON = function(){
+    	var person = prompt("Paste JSON data here.");
+		if (person != null) {
+			if($.trim(person)!=""){
+				try{
+					//person = person.replace(/(\r\n|\n|\r| |\t)/gm,"");
+					var dataTmp = JSON.parse(person);
+					for(var key in dataTmp){
+						if(typeof dataTmp[key] == "object"){
+							dataTmp[key] = JSON.stringify(dataTmp[key]);
+						}
+					}
+					console.log(dataTmp);
+					classList.tempClassView.classData = dataTmp;
+				}catch(exp){
+					alert("Improper JSON data.");
+					return 0;
+				}
+			}else{
+				alert("JSON data cannot be empty.");
+				return 0;
+			}
+		}
+    }
+
+    classList.submit = function(){
+    	if(classList.classes.data.length==0){
+    		alert("There has to be atleast one class.");
+    	}else{
+    		var blankFound = -1;
+    		var blankKey = ""
+    		var fieldsCounts = Array();
+    		for (var i=0;i<classList.classes.data.length;i++){
+    			var fieldsCount = 0;
+    			for(key in classList.classes.data[i].classData){
+    				if(classList.classes.data[i].classData[key]==""){
+    					blankFound = i;
+    					blankKey = key;
+    				}else{
+    					try{
+    						classList.classes.data[i].classData[key] = JSON.parse(classList.classes.data[i].classData[key]);
+    					}catch(e){
+
+    					}    					
+    				}
+    				fieldsCount++;
+    			}
+    			fieldsCounts.push(fieldsCount);
+    		}
+
+    		if(fieldsCounts.indexOf(0)>=0){
+    			alert("Class atleast need one field.");
+    			classList.tempClassView = classList.classes.data[fieldsCounts.indexOf(0)];
+    			return 0;
+    		}
+    		if(blankFound>=0){
+    			alert("Could not submit empty fields ("+blankKey+")");
+    			classList.tempClassView = classList.classes.data[blankFound];
+    			
+    		}else{
+    			$(".formSubmit input#classData").val(JSON.stringify(classList.classes));
+    			$(".formSubmit").submit();
+    		}
+    	}
+    }
+
+    classList.deleteClass = function(){
+    	if (confirm("Are you sure you want to delete this class?") == true) {
+	        var className = classList.tempClassView.name;
+	        console.log(classList);
+	        for(var i=0;i<classList.classes.data.length;i++){
+	        	if(classList.classes.data[i].name==className){
+	        		console.log(className);
+	        		classList.classes.data.splice(i,1);
+	        		console.log(classList);
+	        		if(classList.classes.data.length==0){
+	        			classList.tempClassView = {name:"Nothing selected",classData:{}};
+	        		}else if(i==0){
+	        			classList.tempClassView = classList.classes.data[i];
+	        		}else{
+	        			classList.tempClassView = classList.classes.data[i-1];
+	        		}
+	        		return 0;
+	        	}
+	        }
+	    }
+    }
+
+    function populateFieldRecur(fieldName){
+    	if(populateField(fieldName)){
+    		return 1;
+    	}else{
+    		populateFieldRecur(fieldName);
+    	}
+    }
+
+    function populateField(fieldName){
+    	var person = prompt("Please enter fieldValue");
+		if (person != null) {
+			if($.trim(person)!=""){
+				classList.tempClassView.classData[fieldName] = $.trim(person);
+				return 1;
+			}else{
+				return 0;
+			}
+		}else{
+			return 0;
+		}
+    }
+
+    function convertToSlug(Text){
+	    return Text
+	        .toLowerCase()
+	        .replace(/ /g,'-')
+	        .replace(/[^\w-]+/g,'')
+	        ;
+	}
+
+	classList.deleteField = function(me){
+		delete classList.tempClassView.classData[me.key];
+	}
+  });
+</script>
+<style>
+	.fieldview .panel-body .row{
+		margin:6px 0 0;
+	}
+</style>
+<div ng-controller="EditClassController as classList">
+	<div class="row">
+		<h2><a href="/"><span class="glyphicon glyphicon-home"></span></a> / Classes of <%= user.username %> <button type="button" class="btn btn-success pull-right" ng-click="classList.addClass()">Add class</button></h2>
+	</div>
+	<div class="row">
+		<div class="col-md-3">
+			<div class="list-group classList">
+			  <a href="#" ng-click="classList.selectClass(this)" class="list-group-item {{classList.tempClassView.name==classAlone.name?'active':''}}" ng-repeat="classAlone in classList.classes.data">
+			  	{{classAlone.name}}
+			  </a>
+			</div>
+		</div>
+		<div class="col-md-9">
+			<div class="panel panel-default fieldview">
+				<div class="panel-heading clearfix">{{classList.tempClassView.name}}
+					<span class="pull-right" ng-if="classList.tempClassView.name != 'Nothing selected'"" >
+						<button type="button" class="btn btn-info " ng-click="classList.addFields()">Add fields</button>&nbsp;
+						<button type="button" class="btn btn-info " ng-click="classList.loadJSON()">Load JSON</button>
+						<button type="button" class="btn btn-default " ng-click="classList.deleteClass()">Delete class</button>
+					</span>
+				</div>
+				<div class="panel-body">
+					<div class="row" ng-repeat="(key, value) in classList.tempClassView.classData">
+						<div class="col-md-3">
+							<b>{{key}}</b>
+						</div>
+						<div class="col-md-8">
+							<div class="input-group">
+								<input type="text" class="form-control"  ng-model="classList.tempClassView.classData[key]" />
+								<input type="hidden" class="meHidden" data="{{key}}" value="{{ classList.tempClassView.classData[key] | json}}" />
+								<span ng-click="classList.deleteField(this)" class="input-group-addon btn glyphicon glyphicon-remove" id="basic-addon2"></span>
+							</div>							
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="pull-right">
+			<a href="/" class="btn btn-default " >Back</a>&nbsp;
+			<button type="button" class="btn btn-primary" ng-click="classList.submit()">Update</button>
+			</div>
+		</div>
+	</div>
+	<form class="formSubmit" action="/updateuser" method="post">
+		<input type="hidden" name="classData" id="classData" value=""/>
+		<input type="hidden" name="userSlug" value="<%= user.slug %>"/>
+	</form>
+</div>
